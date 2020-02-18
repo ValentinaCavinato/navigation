@@ -12,6 +12,12 @@
     <class type="costmap_2d::VoxelLayer"     base_class_type="costmap_2d::Layer">
       <description>Similar to obstacle costmap, but uses 3D voxel grid to store data.</description>
     </class>
+    <class type="costmap_2d::TimedObstacleLayer"   base_class_type="costmap_2d::Layer">
+      <description>Listens to laser scan and point cloud messages and marks and clears grid cells. Occupied grid cells are automatically deleted after the decay time.</description>
+    </class>
+    <class type="costmap_2d::ProxemicLayer" base_class_type="costmap_2d::Layer">
+      <description>Uses people information to change the costmap</description>
+    </class>
   </library>
 </class_libraries>
 

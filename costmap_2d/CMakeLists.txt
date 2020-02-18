@@ -3,6 +3,8 @@ project(costmap_2d)
 
 find_package(catkin REQUIRED
         COMPONENTS
+            angles
+            people_msgs
             cmake_modules
             dynamic_reconfigure
             geometry_msgs
@@ -55,6 +57,7 @@ generate_dynamic_reconfigure_options(
   cfg/GenericPlugin.cfg
   cfg/InflationPlugin.cfg
   cfg/VoxelPlugin.cfg
+  cfg/ProxemicLayer.cfg
 )
 
 catkin_package(
@@ -63,6 +66,8 @@ catkin_package(
         ${EIGEN3_INCLUDE_DIRS}
     LIBRARIES costmap_2d layers
     CATKIN_DEPENDS
+        angles
+        people_msgs
         dynamic_reconfigure
         geometry_msgs
         laser_geometry
@@ -104,7 +109,10 @@ add_library(layers
   plugins/inflation_layer.cpp
   plugins/obstacle_layer.cpp
   plugins/static_layer.cpp
+  plugins/timed_obstacle_layer.cpp
   plugins/voxel_layer.cpp
+  plugins/social_layer.cpp
+  plugins/proxemic_layer.cpp
   src/observation_buffer.cpp
 )
 add_dependencies(layers ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
@@ -182,9 +190,6 @@ if(CATKIN_ENABLE_TESTING)
 
   catkin_add_gtest(array_parser_test test/array_parser_test.cpp)
   target_link_libraries(array_parser_test costmap_2d)
-
-  catkin_add_gtest(coordinates_test test/coordinates_test.cpp)
-  target_link_libraries(coordinates_test costmap_2d)
 endif()
 
 install( TARGETS
@@ -197,17 +202,13 @@ install( TARGETS
 install(TARGETS
     costmap_2d
     layers
-    DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 )
 
 install(FILES costmap_plugins.xml
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
-
-install(FILES test/TenByTen.yaml test/TenByTen.pgm
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/test
-)
-
 
 install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
