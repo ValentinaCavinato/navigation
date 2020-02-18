@@ -284,7 +284,7 @@ bool DWAPlannerROS::dwaComputeVelocityCommands(
     tf2::Quaternion q;
     q.setRPY(0, 0, p_th);
     tf2::convert(q, p.pose.orientation);
-    if (i == (std::round((path.getPointsSize()-1) / divider))) {
+    if (i == (std::round((path.getPointsSize() - 1) / divider))) {
       assigned = true;
       candidate = p;
     }
@@ -293,10 +293,19 @@ bool DWAPlannerROS::dwaComputeVelocityCommands(
   }
   if (assigned) {
     geometry_msgs::PoseStamped start_pose_world;
-    if (!send_in_map &&  tf_listener.canTransform("map", "odom", ros::Time(0))){
-      tf_listener.transformPose("/odom", candidate, start_pose_world);
-      std::cout << "sent in frame odom" << std::endl;
+    try {
+      tf_listener.waitForTransform("map", "odom", ros::Time(0),
+                                   ros::Duration(1));
+      if (!send_in_map) {
+        std::cout << "the problem comes here" << std::endl;
+        tf_listener.transformPose("/odom", candidate, start_pose_world);
+        std::cout << "sent in frame odom" << std::endl;
+      }
+    } catch (tf::ExtrapolationException &e) {
+      ROS_ERROR_STREAM("ExtrapolationException: " << e.what());
+      return false;
     }
+
     geometry_msgs::Pose start_pose =
         send_in_map ? candidate.pose : start_pose_world.pose;
 

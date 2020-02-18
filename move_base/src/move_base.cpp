@@ -96,7 +96,7 @@ MoveBase::MoveBase(tf2_ros::Buffer &tf)
 
   // for commanding the base
   // todo:here
-  vel_pub_ = nh.advertise<geometry_msgs::Twist>("cmd_vel3", 1);
+  vel_pub_ = nh.advertise<geometry_msgs::Twist>("cmd_vel", 1);
   current_goal_pub_ =
       private_nh.advertise<geometry_msgs::PoseStamped>("current_goal", 0);
 
@@ -1009,7 +1009,7 @@ bool MoveBase::executeCycle(
         last_valid_control_ = ros::Time::now();
         // make sure that we send the velocity command to the base
         // WARN
-        vel_pub_.publish(cmd_vel);
+        //vel_pub_.publish(cmd_vel);
         if (recovery_trigger_ == CONTROLLING_R)
           recovery_index_ = 0;
       } else {
