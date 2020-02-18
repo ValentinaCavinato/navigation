@@ -1,4 +1,10 @@
 *~
 *.project
 *.cproject
-
+gazebo_ros_pkgs/
+jackal_exploration/
+pedsim_ros/
+pointgrey_camera_driver/
+yaml_cpp/
+*.vscode/
+yaml-cpp/

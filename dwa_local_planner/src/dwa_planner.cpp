@@ -79,7 +79,7 @@ namespace dwa_local_planner {
     forward_point_distance_ = config.forward_point_distance;
     goal_front_costs_.setXShift(forward_point_distance_);
     alignment_costs_.setXShift(forward_point_distance_);
- 
+
     // obstacle costs can vary due to scaling footprint feature
     obstacle_costs_.setParams(config.max_vel_trans, config.max_scaling_factor, config.scaling_speed);
 
@@ -89,29 +89,29 @@ namespace dwa_local_planner {
     vx_samp = config.vx_samples;
     vy_samp = config.vy_samples;
     vth_samp = config.vth_samples;
- 
+
     if (vx_samp <= 0) {
       ROS_WARN("You've specified that you don't want any samples in the x dimension. We'll at least assume that you want to sample one value... so we're going to set vx_samples to 1 instead");
       vx_samp = 1;
       config.vx_samples = vx_samp;
     }
- 
+
     if (vy_samp <= 0) {
       ROS_WARN("You've specified that you don't want any samples in the y dimension. We'll at least assume that you want to sample one value... so we're going to set vy_samples to 1 instead");
       vy_samp = 1;
       config.vy_samples = vy_samp;
     }
- 
+
     if (vth_samp <= 0) {
       ROS_WARN("You've specified that you don't want any samples in the th dimension. We'll at least assume that you want to sample one value... so we're going to set vth_samples to 1 instead");
       vth_samp = 1;
       config.vth_samples = vth_samp;
     }
- 
+
     vsamples_[0] = vx_samp;
     vsamples_[1] = vy_samp;
     vsamples_[2] = vth_samp;
- 
+
 
   }
 
@@ -227,9 +227,10 @@ namespace dwa_local_planner {
     double cost = scored_sampling_planner_.scoreTrajectory(traj, -1);
     //if the trajectory is a legal one... the check passes
     if(cost >= 0) {
+      ROS_INFO("ok");
       return true;
     }
-    ROS_WARN("Invalid Trajectory %f, %f, %f, cost: %f", vel_samples[0], vel_samples[1], vel_samples[2], cost);
+    ROS_ERROR("Invalid Trajectory %f, %f, %f, cost: %f", vel_samples[0], vel_samples[1], vel_samples[2], cost);
 
     //otherwise the check fails
     return false;
@@ -238,14 +239,11 @@ namespace dwa_local_planner {
 
   void DWAPlanner::updatePlanAndLocalCosts(
       const geometry_msgs::PoseStamped& global_pose,
-      const std::vector<geometry_msgs::PoseStamped>& new_plan,
-      const std::vector<geometry_msgs::Point>& footprint_spec) {
+      const std::vector<geometry_msgs::PoseStamped>& new_plan) {
     global_plan_.resize(new_plan.size());
     for (unsigned int i = 0; i < new_plan.size(); ++i) {
       global_plan_[i] = new_plan[i];
     }
-
-    obstacle_costs_.setFootprint(footprint_spec);
 
     // costs for going away from path
     path_costs_.setTargetPoses(global_plan_);
@@ -274,7 +272,7 @@ namespace dwa_local_planner {
       sin(angle_to_goal);
 
     goal_front_costs_.setTargetPoses(front_global_plan);
-    
+
     // keeping the nose on the path
     if (sq_dist > forward_point_distance_ * forward_point_distance_ * cheat_factor_) {
       alignment_costs_.setScale(pdist_scale_);
@@ -293,7 +291,11 @@ namespace dwa_local_planner {
   base_local_planner::Trajectory DWAPlanner::findBestPath(
       const geometry_msgs::PoseStamped& global_pose,
       const geometry_msgs::PoseStamped& global_vel,
-      geometry_msgs::PoseStamped& drive_velocities) {
+      geometry_msgs::PoseStamped& drive_velocities,
+      std::vector<geometry_msgs::Point> footprint_spec) {
+
+
+    obstacle_costs_.setFootprint(footprint_spec);
 
     //make sure that our configuration doesn't change mid-run
     boost::mutex::scoped_lock l(configuration_mutex_);
