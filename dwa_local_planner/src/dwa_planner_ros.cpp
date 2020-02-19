@@ -265,12 +265,7 @@ bool DWAPlannerROS::dwaComputeVelocityCommands(
   //              cmd_vel.linear.x, cmd_vel.linear.y, cmd_vel.angular.z);
   // Fill out the local plan
   geometry_msgs::PoseStamped candidate;
-  bool assigned = false;
-  candidate.header.frame_id = costmap_ros_->getGlobalFrameID();
-  tf2::Quaternion q;
-  q.setEuler(0, 0, 0);
-  tf2::convert(q, candidate.pose.orientation);
-  std::cout << path.getPointsSize() << std::endl;
+  candidate.header.frame_id = "not_init";
   for (unsigned int i = 0; i < path.getPointsSize(); ++i) {
     double p_x, p_y, p_th;
     path.getPoint(i, p_x, p_y, p_th);
@@ -284,20 +279,16 @@ bool DWAPlannerROS::dwaComputeVelocityCommands(
     tf2::Quaternion q;
     q.setRPY(0, 0, p_th);
     tf2::convert(q, p.pose.orientation);
-    if (i == (std::round((path.getPointsSize() - 1) / divider))) {
-      assigned = true;
+    if (i == (std::round((path.getPointsSize() - 1) / divider)))
       candidate = p;
-    }
-
     local_plan.push_back(p);
   }
-  if (assigned) {
+  if (candidate.header.frame_id != "not_init") {
     geometry_msgs::PoseStamped start_pose_world;
     try {
       tf_listener.waitForTransform("map", "odom", ros::Time(0),
                                    ros::Duration(1));
       if (!send_in_map) {
-        std::cout << "the problem comes here" << std::endl;
         tf_listener.transformPose("/odom", candidate, start_pose_world);
         std::cout << "sent in frame odom" << std::endl;
       }
@@ -313,19 +304,16 @@ bool DWAPlannerROS::dwaComputeVelocityCommands(
     start_twist = cmd_vel;
 
     gazebo_msgs::ModelState modelstate;
-    modelstate.model_name = (std::string) "jackal";
-    modelstate.reference_frame = (std::string) "world";
+    modelstate.model_name = (std::string) "jackal"; //TODO
+    modelstate.reference_frame = (std::string) "world"; //TODO
     modelstate.pose = start_pose;
     modelstate.twist = start_twist;
-
     gazebo_msgs::SetModelState setmodelstate;
     setmodelstate.request.model_state = modelstate;
-
     client_gazebo_.call(setmodelstate);
   }
 
   // publish information to the visualizer
-  // TODO: here return the wanted point.
   publishLocalPlan(local_plan);
   return true;
 }

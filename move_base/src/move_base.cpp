@@ -1051,7 +1051,7 @@ bool MoveBase::executeCycle(
     // enabled
     if (recovery_behavior_enabled_ &&
         recovery_index_ < recovery_behaviors_.size()) {
-      ROS_DEBUG_NAMED("move_base_recovery", "Executing behavior %u of %zu",
+      ROS_ERROR_NAMED("move_base_recovery", "Executing behavior %u of %zu",
                       recovery_index_, recovery_behaviors_.size());
       recovery_behaviors_[recovery_index_]->runBehavior();
 
@@ -1248,6 +1248,14 @@ void MoveBase::loadDefaultRecoveryBehaviors() {
       rotate->initialize("rotate_recovery", &tf_, planner_costmap_ros_,
                          controller_costmap_ros_);
       recovery_behaviors_.push_back(rotate);
+    }
+
+    boost::shared_ptr<nav_core::RecoveryBehavior> move_slow(
+        recovery_loader_.createInstance("move_slow_and_clear/MoveSlowAndClear"));
+    if (clearing_rotation_allowed_) {
+      move_slow->initialize("move_slow", &tf_, planner_costmap_ros_,
+                         controller_costmap_ros_);
+      recovery_behaviors_.push_back(move_slow);
     }
 
     // next, we'll load a recovery behavior that will do an aggressive reset of
