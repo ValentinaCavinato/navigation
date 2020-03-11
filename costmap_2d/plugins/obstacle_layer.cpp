@@ -169,7 +169,7 @@ void ObstacleLayer::onInitialize()
       observation_subscribers_.push_back(sub);
       observation_notifiers_.push_back(filter);
 
-      observation_notifiers_.back()->setTolerance(ros::Duration(0.05));
+      observation_notifiers_.back()->setTolerance(ros::Duration(0.2));
     }
     else if (data_type == "PointCloud")
     {

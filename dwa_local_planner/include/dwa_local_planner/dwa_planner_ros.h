@@ -66,6 +66,11 @@ namespace dwa_local_planner {
  */
 class DWAPlannerROS : public nav_core::BaseLocalPlanner {
 public:
+  const std::list<gazebo_msgs::ModelState> &getPreviousPositions() {
+    to_clear = true;
+    return previous_positions_;
+  }
+  void clearPreviousPositions() { previous_positions_.clear(); }
   /**
    * @brief  Constructor for DWAPlannerROS wrapper
    */
@@ -163,6 +168,8 @@ private:
   double divider;
   bool send_in_map;
   tf::TransformListener tf_listener;
+  bool to_clear;
+  std::list<gazebo_msgs::ModelState> previous_positions_;
 };
 }; // namespace dwa_local_planner
 #endif

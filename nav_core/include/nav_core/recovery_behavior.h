@@ -38,6 +38,7 @@
 #define NAV_CORE_RECOVERY_BEHAVIOR_H
 
 #include <costmap_2d/costmap_2d_ros.h>
+#include <gazebo_msgs/ModelState.h>
 #include <tf2_ros/buffer.h>
 
 namespace nav_core {
@@ -47,6 +48,7 @@ namespace nav_core {
    */
   class RecoveryBehavior{
     public:
+    virtual void runBehavior(const gazebo_msgs::ModelState &ms){};
       /**
        * @brief  Initialization function for the RecoveryBehavior
        * @param tf A pointer to a transform listener

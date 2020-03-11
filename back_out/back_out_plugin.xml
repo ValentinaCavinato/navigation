@@ -1,0 +1,7 @@
+<library path="lib/libback_out">
+  <class name="back_out/BackOut" type="back_out::BackOut" base_class_type="nav_core::RecoveryBehavior">
+    <description>
+      back out.
+    </description>
+  </class>
+</library>
