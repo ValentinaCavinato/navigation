@@ -101,7 +101,7 @@ void DWAPlannerROS::groundTruthCallback(
 
 DWAPlannerROS::DWAPlannerROS()
     : initialized_(false), odom_helper_("odom"), setup_(false), divider(5.0),
-      send_in_map(true) {}
+      send_in_map(true), to_clear(false) {}
 
 void DWAPlannerROS::initialize(std::string name, tf2_ros::Buffer *tf,
                                costmap_2d::Costmap2DROS *costmap_ros) {
@@ -265,6 +265,7 @@ bool DWAPlannerROS::dwaComputeVelocityCommands(
   //              cmd_vel.linear.x, cmd_vel.linear.y, cmd_vel.angular.z);
   // Fill out the local plan
   geometry_msgs::PoseStamped candidate;
+  double candidate_heading;
   candidate.header.frame_id = "not_init";
   for (unsigned int i = 0; i < path.getPointsSize(); ++i) {
     double p_x, p_y, p_th;
@@ -279,8 +280,10 @@ bool DWAPlannerROS::dwaComputeVelocityCommands(
     tf2::Quaternion q;
     q.setRPY(0, 0, p_th);
     tf2::convert(q, p.pose.orientation);
-    if (i == (std::round((path.getPointsSize() - 1) / divider)))
+    if (i == (std::round((path.getPointsSize() - 1) / divider))) {
       candidate = p;
+      candidate_heading = p_th;
+    }
     local_plan.push_back(p);
   }
   if (candidate.header.frame_id != "not_init") {
@@ -288,26 +291,23 @@ bool DWAPlannerROS::dwaComputeVelocityCommands(
     try {
       tf_listener.waitForTransform("map", "odom", ros::Time(0),
                                    ros::Duration(1));
-      if (!send_in_map) {
-        tf_listener.transformPose("/odom", candidate, start_pose_world);
-        std::cout << "sent in frame odom" << std::endl;
-      }
+
+      tf_listener.transformPose("/odom", candidate, start_pose_world);
     } catch (tf::ExtrapolationException &e) {
       ROS_ERROR_STREAM("ExtrapolationException: " << e.what());
       return false;
     }
 
-    geometry_msgs::Pose start_pose =
-        send_in_map ? candidate.pose : start_pose_world.pose;
-
+    geometry_msgs::Pose start_pose = start_pose_world.pose;
     geometry_msgs::Twist start_twist;
     start_twist = cmd_vel;
 
     gazebo_msgs::ModelState modelstate;
-    modelstate.model_name = (std::string) "jackal"; //TODO
-    modelstate.reference_frame = (std::string) "world"; //TODO
+    modelstate.model_name = (std::string) "jackal";   // TODO
+    modelstate.reference_frame = (std::string) "map"; // TODO
     modelstate.pose = start_pose;
     modelstate.twist = start_twist;
+
     gazebo_msgs::SetModelState setmodelstate;
     setmodelstate.request.model_state = modelstate;
     client_gazebo_.call(setmodelstate);
@@ -344,7 +344,18 @@ bool DWAPlannerROS::computeVelocityCommands(geometry_msgs::Twist &cmd_vel) {
   // update plan in dwa_planner even if we just stop and rotate, to allow
   // checkTrajectory
   dp_->updatePlanAndLocalCosts(current_pose_, transformed_plan);
-
+  if (to_clear || previous_positions_.size()>=10) {
+    to_clear = false;
+    previous_positions_.clear();
+  }
+  auto start_pose = transformed_plan[transformed_plan.size() / 10].pose;
+  geometry_msgs::Twist start_twist;
+  gazebo_msgs::ModelState modelstate;
+  modelstate.model_name = (std::string) "jackal";   // TODO
+  modelstate.reference_frame = (std::string) "map"; // TODO
+  modelstate.pose = start_pose;
+  modelstate.twist = start_twist;
+  previous_positions_.push_back(modelstate);
   if (latchedStopRotateController_.isPositionReached(&planner_util_,
                                                      current_pose_)) {
     // publish an empty plan because we've reached our goal position

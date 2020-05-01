@@ -558,8 +558,8 @@ void MoveBase::publishZeroVelocity() {
   cmd_vel.linear.x = 0.0;
   cmd_vel.linear.y = 0.0;
   cmd_vel.angular.z = 0.0;
-  vel_pub_.publish(cmd_vel);
-  std::cout << "Sending zero velocity"<< std::endl;
+  // vel_pub_.publish(cmd_vel);
+  std::cout << "Sending zero velocity" << std::endl;
 }
 
 bool MoveBase::isQuaternionValid(const geometry_msgs::Quaternion &q) {
@@ -1009,7 +1009,7 @@ bool MoveBase::executeCycle(
         last_valid_control_ = ros::Time::now();
         // make sure that we send the velocity command to the base
         // WARN
-        //vel_pub_.publish(cmd_vel);
+        // vel_pub_.publish(cmd_vel);
         if (recovery_trigger_ == CONTROLLING_R)
           recovery_index_ = 0;
       } else {
@@ -1053,8 +1053,14 @@ bool MoveBase::executeCycle(
         recovery_index_ < recovery_behaviors_.size()) {
       ROS_ERROR_NAMED("move_base_recovery", "Executing behavior %u of %zu",
                       recovery_index_, recovery_behaviors_.size());
-      recovery_behaviors_[recovery_index_]->runBehavior();
-
+      if (recovery_index_ != 1)
+        recovery_behaviors_[recovery_index_]->runBehavior();
+      else {
+        std::cout << "HEREEEEEEEEEEEEEEEEEEEEEEEEEEEEE" << std::endl;
+        const auto &previous_pos = tc_->getPreviousPositions();
+        auto &to_send = *(--previous_pos.end());
+        recovery_behaviors_[recovery_index_]->runBehavior(to_send);
+      }
       // we at least want to give the robot some time to stop oscillating after
       // executing the behavior
       last_oscillation_reset_ = ros::Time::now();
@@ -1241,6 +1247,12 @@ void MoveBase::loadDefaultRecoveryBehaviors() {
                            controller_costmap_ros_);
     recovery_behaviors_.push_back(cons_clear);
 
+    boost::shared_ptr<nav_core::RecoveryBehavior> rotat(
+        recovery_loader_.createInstance("back_out/BackOut"));
+
+    rotat->initialize("back_out", &tf_, planner_costmap_ros_,
+                      controller_costmap_ros_);
+    recovery_behaviors_.push_back(rotat);
     // next, we'll load a recovery behavior to rotate in place
     boost::shared_ptr<nav_core::RecoveryBehavior> rotate(
         recovery_loader_.createInstance("rotate_recovery/RotateRecovery"));
@@ -1251,10 +1263,11 @@ void MoveBase::loadDefaultRecoveryBehaviors() {
     }
 
     boost::shared_ptr<nav_core::RecoveryBehavior> move_slow(
-        recovery_loader_.createInstance("move_slow_and_clear/MoveSlowAndClear"));
+        recovery_loader_.createInstance(
+            "move_slow_and_clear/MoveSlowAndClear"));
     if (clearing_rotation_allowed_) {
       move_slow->initialize("move_slow", &tf_, planner_costmap_ros_,
-                         controller_costmap_ros_);
+                            controller_costmap_ros_);
       recovery_behaviors_.push_back(move_slow);
     }
 

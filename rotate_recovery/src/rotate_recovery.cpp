@@ -158,6 +158,7 @@ void RotateRecovery::runBehavior()
       {
         ROS_ERROR("Rotate recovery can't rotate in place because there is a potential collision but doing it anyway. Cost: %.2f",
                   footprint_cost);
+        return;
       }
 
       sim_angle += sim_granularity_;

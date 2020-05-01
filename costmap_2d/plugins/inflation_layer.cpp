@@ -54,7 +54,7 @@ namespace costmap_2d
 InflationLayer::InflationLayer()
   : inflation_radius_(0)
   , weight_(0)
-  , inflate_unknown_(false)
+  , inflate_unknown_(true)
   , cell_inflation_radius_(0)
   , cached_cell_inflation_radius_(0)
   , dsrv_(NULL)
